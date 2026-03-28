@@ -13,6 +13,7 @@ import { startCliServer, stopCliServer, handleOpenFileArgs } from "./main/cli-se
 import { setupSSHHandlers } from "./main/ssh-handler";
 import { setupHostHandlers } from "./main/host-manager";
 import { closeConnectionPool } from "./main/ssh-connection-pool";
+import { loadWindowState, saveWindowState } from "./main/window-state";
 
 declare const MAIN_WINDOW_WEBPACK_ENTRY: string;
 declare const MAIN_WINDOW_PRELOAD_WEBPACK_ENTRY: string;
@@ -30,12 +31,46 @@ process.on("unhandledRejection", (reason) => {
   log.error("Unhandled rejection:", reason);
 });
 
+const gotTheLock = app.requestSingleInstanceLock();
+if (!gotTheLock) {
+  app.quit();
+}
+
+app.on("second-instance", (_event, argv) => {
+  const win = BrowserWindow.getAllWindows()[0];
+  if (win) {
+    if (win.isMinimized()) win.restore();
+    win.focus();
+    handleOpenFileArgs(argv);
+  }
+});
+
+let isFirstWindow = true;
+
 export const createWindow = (): void => {
   const config = getConfig();
 
-  const mainWindow = new BrowserWindow({
+  let windowOpts: Electron.BrowserWindowConstructorOptions = {
     width: config.window.width,
     height: config.window.height,
+  };
+
+  let shouldMaximize = false;
+
+  if (isFirstWindow) {
+    const savedState = loadWindowState();
+    windowOpts.width = savedState.width;
+    windowOpts.height = savedState.height;
+    if (savedState.x !== undefined && savedState.y !== undefined) {
+      windowOpts.x = savedState.x;
+      windowOpts.y = savedState.y;
+    }
+    shouldMaximize = savedState.isMaximized;
+    isFirstWindow = false;
+  }
+
+  const mainWindow = new BrowserWindow({
+    ...windowOpts,
     transparent: true,
     visualEffectState: "active",
     titleBarStyle: "hiddenInset",
@@ -44,10 +79,14 @@ export const createWindow = (): void => {
     webPreferences: {
       preload: MAIN_WINDOW_PRELOAD_WEBPACK_ENTRY,
       nodeIntegration: false,
-      contextIsolation: false,
-      sandbox: false,
+      contextIsolation: true,
+      sandbox: true,
     },
   });
+
+  if (shouldMaximize) {
+    mainWindow.maximize();
+  }
 
   if (config.background?.transparent !== false) {
     const vibrancyType = (config.vibrancy || "under-window") as
@@ -59,6 +98,10 @@ export const createWindow = (): void => {
   }
 
   mainWindow.loadURL(MAIN_WINDOW_WEBPACK_ENTRY);
+
+  mainWindow.on("resize", () => saveWindowState(mainWindow));
+  mainWindow.on("move", () => saveWindowState(mainWindow));
+  mainWindow.on("close", () => saveWindowState(mainWindow));
 
   mainWindow.webContents.on("render-process-gone", (_event, details) => {
     log.error("Render process gone:", details.reason, "exitCode:", details.exitCode);

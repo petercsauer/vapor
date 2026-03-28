@@ -241,6 +241,4 @@ const api: VaporAPI = {
   },
 };
 
-// With contextIsolation: false, contextBridge doesn't work
-// We need to assign directly to window
-(window as any).vapor = api;
+contextBridge.exposeInMainWorld('vapor', api);
