@@ -9,17 +9,10 @@
 - GitHub Actions CI/CD pipeline with build, test, and release jobs
 - Automated GitHub Releases with versioned tags and a rolling `latest` alias
 - Lint, typecheck, and coverage quality gates in CI
-- ASAR fuses enabled for hardened runtime security
 - Single-instance lock to prevent multiple app windows conflicting
 - Window state persistence across sessions
 - Structured logging via electron-log
 - Auto-update support via update-electron-app
-
-### Security
-
-- Context isolation enforced via contextBridge in preload
-- Node integration disabled in renderer
-- WebSecurity, sandbox, and remote module restrictions applied
 
 ## v0.1.0 - 2026-03-20
 
