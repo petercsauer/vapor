@@ -84,7 +84,10 @@ export const createWindow = (): void => {
 };
 
 app.on("ready", () => {
-  updateElectronApp();
+  updateElectronApp({
+    updateInterval: "1 hour",
+    notifyUser: true,
+  });
 
   const iconDirs = [
     path.join(app.getAppPath(), "assets"),

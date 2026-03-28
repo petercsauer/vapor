@@ -97,7 +97,7 @@ const config: ForgeConfig = {
         name: 'vapor',
       },
       prerelease: false,
-      draft: true,
+      draft: false,
     }),
   ],
 };

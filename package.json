@@ -1,7 +1,7 @@
 {
   "name": "vapor",
   "productName": "Vapor",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "A frosted-glass terminal emulator",
   "main": ".webpack/main",
   "private": true,
@@ -15,7 +15,8 @@
     "lint": "eslint --ext .ts,.tsx .",
     "test": "vitest run",
     "test:watch": "vitest",
-    "postinstall": "electron-rebuild -f -o node-pty"
+    "postinstall": "electron-rebuild -f -o node-pty",
+    "version:bump": "npm version patch --no-git-tag-version"
   },
   "keywords": [],
   "author": {
