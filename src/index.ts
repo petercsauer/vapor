@@ -1,5 +1,6 @@
 import { app, BrowserWindow, nativeImage, ipcMain, shell } from "electron";
 import { updateElectronApp } from "update-electron-app";
+import log from "electron-log/main";
 import * as path from "path";
 import { setupPtyHandlers, killAllSessions } from "./main/pty-manager";
 import { setupMenu } from "./main/menu";
@@ -17,6 +18,17 @@ declare const MAIN_WINDOW_WEBPACK_ENTRY: string;
 declare const MAIN_WINDOW_PRELOAD_WEBPACK_ENTRY: string;
 
 app.setName("Vapor");
+
+log.initialize({ preload: true });
+log.transports.file.level = "info";
+log.transports.file.maxSize = 5 * 1024 * 1024;
+
+process.on("uncaughtException", (err) => {
+  log.error("Uncaught exception:", err);
+});
+process.on("unhandledRejection", (reason) => {
+  log.error("Unhandled rejection:", reason);
+});
 
 export const createWindow = (): void => {
   const config = getConfig();
@@ -47,6 +59,22 @@ export const createWindow = (): void => {
   }
 
   mainWindow.loadURL(MAIN_WINDOW_WEBPACK_ENTRY);
+
+  mainWindow.webContents.on("render-process-gone", (_event, details) => {
+    log.error("Render process gone:", details.reason, "exitCode:", details.exitCode);
+  });
+
+  mainWindow.on("unresponsive", () => {
+    log.warn("Window became unresponsive");
+  });
+
+  mainWindow.webContents.on("will-navigate", (event) => {
+    event.preventDefault();
+  });
+
+  mainWindow.webContents.setWindowOpenHandler(() => {
+    return { action: "deny" };
+  });
 
   mainWindow.on("swipe" as const, (_event: Electron.Event, direction: string) => {
     if (direction === "left" || direction === "right") {

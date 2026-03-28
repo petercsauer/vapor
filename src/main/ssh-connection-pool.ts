@@ -1,4 +1,5 @@
 import { Client, SFTPWrapper } from "ssh2";
+import log from "electron-log/main";
 import * as fs from "fs";
 import * as path from "path";
 import * as os from "os";
@@ -89,17 +90,17 @@ export class SFTPConnectionPool {
 
           // Handle connection errors
           client.on("error", (err: Error) => {
-            console.error(`[SFTPConnectionPool] Connection error for ${host}:`, err);
+            log.error(`[SFTPConnectionPool] Connection error for ${host}:`, err);
             this.handleConnectionError(host, entry);
           });
 
           client.on("end", () => {
-            console.log(`[SFTPConnectionPool] Connection ended for ${host}`);
+            log.info(`[SFTPConnectionPool] Connection ended for ${host}`);
             this.removeConnection(host);
           });
 
           client.on("close", () => {
-            console.log(`[SFTPConnectionPool] Connection closed for ${host}`);
+            log.info(`[SFTPConnectionPool] Connection closed for ${host}`);
             this.removeConnection(host);
           });
 
@@ -131,14 +132,14 @@ export class SFTPConnectionPool {
       });
       entry.reconnectAttempts = 0; // Reset on successful check
     } catch (err) {
-      console.warn(`[SFTPConnectionPool] Health check failed for ${host}:`, err);
+      log.warn(`[SFTPConnectionPool] Health check failed for ${host}:`, err);
       this.handleConnectionError(host, entry);
     }
   }
 
   private async handleConnectionError(host: string, entry: ConnectionEntry): Promise<void> {
     if (entry.reconnectAttempts >= this.MAX_RECONNECT_ATTEMPTS) {
-      console.error(`[SFTPConnectionPool] Max reconnection attempts reached for ${host}, removing connection`);
+      log.error(`[SFTPConnectionPool] Max reconnection attempts reached for ${host}, removing connection`);
       this.removeConnection(host);
       return;
     }
@@ -149,7 +150,7 @@ export class SFTPConnectionPool {
     );
     entry.reconnectAttempts++;
 
-    console.log(`[SFTPConnectionPool] Reconnecting to ${host} in ${backoff}ms (attempt ${entry.reconnectAttempts}/${this.MAX_RECONNECT_ATTEMPTS})`);
+    log.info(`[SFTPConnectionPool] Reconnecting to ${host} in ${backoff}ms (attempt ${entry.reconnectAttempts}/${this.MAX_RECONNECT_ATTEMPTS})`);
 
     setTimeout(async () => {
       try {
@@ -157,9 +158,9 @@ export class SFTPConnectionPool {
         this.removeConnection(host);
         // Create new connection
         await this.createConnection(host);
-        console.log(`[SFTPConnectionPool] Successfully reconnected to ${host}`);
+        log.info(`[SFTPConnectionPool] Successfully reconnected to ${host}`);
       } catch (err) {
-        console.error(`[SFTPConnectionPool] Reconnection failed for ${host}:`, err);
+        log.error(`[SFTPConnectionPool] Reconnection failed for ${host}:`, err);
       }
     }, backoff);
   }
@@ -222,7 +223,7 @@ export class SFTPConnectionPool {
         config.privateKey = fs.readFileSync(keyPath);
       }
     } catch (err) {
-      console.warn(`[SFTPConnectionPool] Could not read SSH config:`, err);
+      log.warn(`[SFTPConnectionPool] Could not read SSH config:`, err);
     }
 
     // Try SSH agent

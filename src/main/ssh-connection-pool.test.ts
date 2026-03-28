@@ -6,6 +6,10 @@ import { EventEmitter } from "events";
 let mockClientInstances: any[] = [];
 let mockSftpInstances: any[] = [];
 
+vi.mock("electron-log/main", () => ({
+  default: { error: vi.fn(), warn: vi.fn(), info: vi.fn(), debug: vi.fn(), initialize: vi.fn(), transports: { file: {} } },
+}));
+
 // Mock ssh2 - must be hoisted before imports
 vi.mock("ssh2", async () => {
   const { EventEmitter } = await import("events");
