@@ -12,5 +12,21 @@
     "plugin:import/electron",
     "plugin:import/typescript"
   ],
-  "parser": "@typescript-eslint/parser"
+  "parser": "@typescript-eslint/parser",
+  "ignorePatterns": ["marketing/"],
+  "rules": {
+    "import/no-unresolved": ["error", { "ignore": ["^vitest"] }]
+  },
+  "overrides": [
+    {
+      "files": ["**/*.test.{ts,tsx}", "**/test/**/*.{ts,tsx}"],
+      "rules": {
+        "@typescript-eslint/ban-types": ["error", {
+          "types": { "Function": false },
+          "extendDefaults": true
+        }],
+        "@typescript-eslint/no-empty-function": "off"
+      }
+    }
+  ]
 }

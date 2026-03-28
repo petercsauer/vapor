@@ -241,8 +241,8 @@ function Submenu({
   const categorySectionPad = SECTION_PAD;
   const categoryItemOffset = categoryIndex * ITEM_H;
 
-  let subTop = parentTop + recentSectionH + separatorH + categorySectionPad + categoryItemOffset;
-  let subLeft = parentLeft + parentWidth + 4;
+  const subTop = parentTop + recentSectionH + separatorH + categorySectionPad + categoryItemOffset;
+  const subLeft = parentLeft + parentWidth + 4;
 
   useEffect(() => {
     const el = subRef.current;

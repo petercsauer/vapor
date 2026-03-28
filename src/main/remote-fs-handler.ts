@@ -230,7 +230,7 @@ export function setupRemoteFsHandlers(): void {
 
                 sftp.rename(tmpPath, normalized, (renameErr: any) => {
                   if (renameErr) {
-                    sftp.unlink(tmpPath, () => {});
+                    sftp.unlink(tmpPath, (_err: Error | undefined) => { return; });
                     return reject(mapSFTPError(renameErr, "rename", normalized));
                   }
                   resolve();
@@ -332,46 +332,39 @@ export function setupRemoteFsHandlers(): void {
         host,
         (sftp) => {
           const normalized = normalizePath(dirPath);
-          return withTimeout(
-            new Promise<void>(async (resolve, reject) => {
-              const createDir = async (currentPath: string): Promise<void> => {
-                return new Promise<void>((resolveDir, rejectDir) => {
-                  sftp.stat(currentPath, (statErr: any, stats: any) => {
-                    if (!statErr && stats && (stats.mode! & S_IFDIR) !== 0) return resolveDir();
+          const createDir = async (currentPath: string): Promise<void> => {
+            return new Promise<void>((resolveDir, rejectDir) => {
+              sftp.stat(currentPath, (statErr: any, stats: any) => {
+                if (!statErr && stats && (stats.mode! & S_IFDIR) !== 0) return resolveDir();
 
-                    sftp.mkdir(currentPath, (mkdirErr: any) => {
-                      if (!mkdirErr) return resolveDir();
+                sftp.mkdir(currentPath, (mkdirErr: any) => {
+                  if (!mkdirErr) return resolveDir();
 
-                      const sftpErr = mkdirErr as SFTPError;
-                      if (sftpErr.code !== SFTP_STATUS_CODE.NO_SUCH_FILE) {
-                        return rejectDir(mapSFTPError(mkdirErr, "mkdir", currentPath));
-                      }
+                  const sftpErr = mkdirErr as SFTPError;
+                  if (sftpErr.code !== SFTP_STATUS_CODE.NO_SUCH_FILE) {
+                    return rejectDir(mapSFTPError(mkdirErr, "mkdir", currentPath));
+                  }
 
-                      const parentPath = path.posix.dirname(currentPath);
-                      if (parentPath === currentPath || parentPath === "/") {
-                        return rejectDir(mapSFTPError(mkdirErr, "mkdir", currentPath));
-                      }
+                  const parentPath = path.posix.dirname(currentPath);
+                  if (parentPath === currentPath || parentPath === "/") {
+                    return rejectDir(mapSFTPError(mkdirErr, "mkdir", currentPath));
+                  }
 
-                      createDir(parentPath)
-                        .then(() => {
-                          sftp.mkdir(currentPath, (retryErr: any) => {
-                            if (retryErr) return rejectDir(mapSFTPError(retryErr, "mkdir", currentPath));
-                            resolveDir();
-                          });
-                        })
-                        .catch(rejectDir);
-                    });
-                  });
+                  createDir(parentPath)
+                    .then(() => {
+                      sftp.mkdir(currentPath, (retryErr: any) => {
+                        if (retryErr) return rejectDir(mapSFTPError(retryErr, "mkdir", currentPath));
+                        resolveDir();
+                      });
+                    })
+                    .catch(rejectDir);
                 });
-              };
+              });
+            });
+          };
 
-              try {
-                await createDir(normalized);
-                resolve();
-              } catch (err) {
-                reject(err);
-              }
-            }),
+          return withTimeout(
+            createDir(normalized),
             SFTP_TIMEOUT,
             "mkdir",
           );

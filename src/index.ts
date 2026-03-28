@@ -1,4 +1,4 @@
-import { app, BrowserWindow, nativeImage, ipcMain, shell } from "electron";
+import { app, BrowserWindow, Menu, nativeImage, ipcMain, shell } from "electron";
 import { updateElectronApp } from "update-electron-app";
 import log from "electron-log/main";
 import * as path from "path";
@@ -50,7 +50,7 @@ let isFirstWindow = true;
 export const createWindow = (): void => {
   const config = getConfig();
 
-  let windowOpts: Electron.BrowserWindowConstructorOptions = {
+  const windowOpts: Electron.BrowserWindowConstructorOptions = {
     width: config.window.width,
     height: config.window.height,
   };
@@ -151,7 +151,7 @@ app.on("ready", () => {
 
   // Setup dock menu (macOS)
   if (app.dock) {
-    const dockMenu = require("electron").Menu.buildFromTemplate([
+    const dockMenu = Menu.buildFromTemplate([
       {
         label: "New Window",
         click: () => createWindow(),

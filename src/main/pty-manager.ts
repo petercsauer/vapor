@@ -13,7 +13,7 @@ import type { SessionState } from "../shared/types";
 
 function shellQuote(s: string): string {
   if (!s) return "''";
-  if (/^[a-zA-Z0-9_.\/\-]+$/.test(s)) return s;
+  if (/^[a-zA-Z0-9_./-]+$/.test(s)) return s;
   return "'" + s.replace(/'/g, "'\\''") + "'";
 }
 
