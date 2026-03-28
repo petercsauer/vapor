@@ -1,0 +1,603 @@
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  line-height: 1.5;
+  -webkit-text-size-adjust: 100%;
+  font-family: ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+button, input, select, textarea {
+  font-family: inherit;
+  font-size: inherit;
+  line-height: inherit;
+  color: inherit;
+}
+
+button {
+  cursor: default;
+}
+
+:root {
+  --text-primary: rgba(255, 255, 255, 0.95);
+  --text-secondary: rgba(255, 255, 255, 0.85);
+  --text-muted: rgba(255, 255, 255, 0.5);
+  --text-dim: rgba(255, 255, 255, 0.35);
+  --text-faint: rgba(255, 255, 255, 0.3);
+  --text-hover: rgba(255, 255, 255, 0.6);
+  --text-bright: rgba(255, 255, 255, 0.8);
+
+  --bg-overlay: rgba(0, 0, 0, 0.45);
+  --bg-surface: rgba(30, 30, 30, 0.95);
+  --bg-surface-dim: rgba(30, 30, 30, 0.9);
+  --bg-subtle: rgba(255, 255, 255, 0.06);
+  --bg-hover: rgba(255, 255, 255, 0.08);
+  --bg-active: rgba(255, 255, 255, 0.1);
+  --bg-highlight: rgba(255, 255, 255, 0.12);
+  --bg-strong: rgba(255, 255, 255, 0.14);
+  --bg-divider: rgba(255, 255, 255, 0.12);
+  --bg-divider-active: rgba(255, 255, 255, 0.25);
+
+  --accent: rgba(0, 149, 255, 0.9);
+  --accent-bg: rgba(0, 149, 255, 0.2);
+  --accent-border: rgba(0, 149, 255, 0.8);
+  --accent-outline: rgba(0, 149, 255, 0.6);
+  --accent-outline-dim: rgba(0, 149, 255, 0.5);
+  --accent-glow: rgba(0, 149, 255, 0.15);
+  --accent-selection: rgba(0, 149, 255, 0.65);
+
+  --border-subtle: rgba(255, 255, 255, 0.04);
+  --border-muted: rgba(255, 255, 255, 0.1);
+  --border-highlight: rgba(255, 255, 255, 0.12);
+
+  --shadow-dropdown: 0 8px 24px rgba(0, 0, 0, 0.4);
+  --shadow-small: 0 2px 8px rgba(0, 0, 0, 0.4);
+
+  --ssh-text: rgba(100, 220, 150, 0.95);
+  --ssh-bg: rgba(60, 200, 120, 0.18);
+  --ssh-border: rgba(80, 200, 140, 0.25);
+
+  --container-text: rgba(100, 180, 255, 0.95);
+  --container-bg: rgba(60, 140, 255, 0.18);
+  --container-border: rgba(80, 160, 255, 0.25);
+
+  --danger: rgba(255, 100, 100, 0.8);
+
+  --minimap-focused: rgba(255, 255, 255, 0.55);
+  --minimap-unfocused: rgba(255, 255, 255, 0.13);
+  --text-tab-idle: rgba(255, 255, 255, 0.45);
+  --text-tab-hover: rgba(255, 255, 255, 0.7);
+
+  --bg-input: rgba(255, 255, 255, 0.07);
+  --accent-text: rgba(0, 149, 255, 0.95);
+}
+
+.icon-button {
+  background: none;
+  border: none;
+  cursor: default;
+  color: var(--text-faint);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 5px;
+  transition: color 0.12s, background 0.12s;
+}
+
+.icon-button:hover {
+  color: var(--text-hover);
+  background: var(--bg-subtle);
+}
+
+.dropdown-surface {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-muted);
+  border-radius: 8px;
+  box-shadow: var(--shadow-dropdown);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+}
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal-panel {
+  width: 600px;
+  max-height: 80vh;
+  background: var(--bg-surface);
+  backdrop-filter: blur(20px);
+  border-radius: 12px;
+  border: 1px solid var(--border-muted);
+  box-shadow: var(--shadow-dropdown);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.form-input {
+  width: 100%;
+  padding: 8px 12px;
+  font-size: 12px;
+  color: var(--text-primary);
+  background: var(--bg-input);
+  border: 1px solid var(--border-muted);
+  border-radius: 6px;
+  outline: none;
+  font-family: monospace;
+}
+
+.form-input:focus {
+  border-color: var(--accent-outline);
+}
+
+.form-label {
+  display: block;
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-bottom: 6px;
+}
+
+.section-title {
+  margin: 0 0 12px 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.menu-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 26px;
+  padding: 0 12px;
+  font-size: 12px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  user-select: none;
+  border-radius: 4px;
+  margin: 0 4px;
+  transition: background 0.08s;
+}
+
+.menu-row:hover {
+  background: var(--bg-hover);
+}
+
+.menu-row.disabled {
+  color: var(--text-dim);
+  cursor: default;
+  pointer-events: none;
+}
+
+.menu-row.danger {
+  color: var(--danger);
+}
+
+.host-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  font-size: 12px;
+  color: var(--text-secondary);
+  cursor: default;
+  transition: background 0.1s;
+}
+
+.host-row:hover {
+  background: var(--bg-hover);
+}
+
+.remove-btn {
+  font-size: 11px;
+  color: var(--text-dim);
+  padding: 0 2px;
+  border-radius: 3px;
+  transition: color 0.1s;
+  flex-shrink: 0;
+  line-height: 1;
+}
+
+.remove-btn:hover {
+  color: var(--danger);
+}
+
+.layout-delete-btn:hover {
+  color: var(--danger);
+}
+
+.menu-separator {
+  height: 1px;
+  margin: 4px 8px;
+  background: var(--border-subtle);
+}
+
+.hint-box {
+  padding: 12px;
+  background: var(--bg-subtle);
+  border-radius: 6px;
+  margin-bottom: 12px;
+}
+
+.hint-box p {
+  margin: 0;
+  font-size: 11px;
+  color: var(--text-muted);
+  line-height: 1.5;
+}
+
+.btn-primary {
+  padding: 8px 16px;
+  font-size: 12px;
+  font-weight: 500;
+  color: #FFFFFF;
+  background: var(--accent);
+  border: none;
+  border-radius: 6px;
+  cursor: default;
+  transition: opacity 0.12s;
+}
+
+.btn-primary:hover {
+  opacity: 0.85;
+}
+
+.btn-primary:disabled {
+  opacity: 0.6;
+}
+
+.btn-secondary {
+  padding: 8px 16px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  background: transparent;
+  border: 1px solid var(--border-muted);
+  border-radius: 6px;
+  cursor: default;
+  transition: all 0.12s;
+}
+
+.btn-secondary:hover {
+  background: var(--bg-subtle);
+  color: var(--text-primary);
+}
+
+.settings-input {
+  width: 100%;
+  padding: 6px 10px;
+  font-size: 13px;
+  color: var(--text-primary);
+  background: var(--bg-input);
+  border: 1px solid var(--border-muted);
+  border-radius: 6px;
+  outline: none;
+  font-family: monospace;
+}
+
+.settings-input:focus {
+  border-color: var(--accent-outline);
+}
+
+.segmented-group {
+  display: flex;
+  background: var(--bg-subtle);
+  border-radius: 7px;
+  padding: 2px;
+  border: 1px solid var(--border-muted);
+}
+
+.segmented-btn {
+  padding: 5px 18px;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-muted);
+  background: transparent;
+  border: none;
+  border-radius: 5px;
+  cursor: default;
+  transition: all 0.15s ease;
+}
+
+.segmented-btn.active {
+  color: var(--text-primary);
+  background: var(--bg-surface);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+.drag-region {
+  -webkit-app-region: drag;
+}
+
+.no-drag {
+  -webkit-app-region: no-drag;
+}
+
+html, body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: transparent !important;
+}
+
+#root {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: var(--bg-overlay);
+}
+
+.xterm,
+.xterm-viewport,
+.xterm-screen {
+  background: transparent !important;
+  background-color: transparent !important;
+}
+
+.xterm canvas {
+  background: transparent !important;
+}
+
+html.opaque-mode,
+html.opaque-mode body {
+  background: var(--bg-opaque, #121212) !important;
+}
+
+html.opaque-mode #root {
+  background: var(--bg-opaque, #121212);
+}
+
+html.opaque-mode .xterm,
+html.opaque-mode .xterm-viewport,
+html.opaque-mode .xterm-screen {
+  background: inherit !important;
+  background-color: inherit !important;
+}
+
+html.opaque-mode .xterm canvas {
+  background: inherit !important;
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.dropdown-scroll::-webkit-scrollbar {
+  width: 4px;
+}
+
+.dropdown-scroll::-webkit-scrollbar-track {
+  background: transparent;
+  margin: 3px 0;
+}
+
+.dropdown-scroll::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 2px;
+}
+
+.dropdown-scroll::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+/* Monaco editor overrides — ensure scrollbars render correctly
+   regardless of Monaco CSS load order vs Tailwind preflight */
+.monaco-scrollable-element > .scrollbar {
+  background: transparent !important;
+}
+.monaco-scrollable-element > .scrollbar > .slider {
+  background: rgba(255, 255, 255, 0.1) !important;
+  border-radius: 3px;
+}
+.monaco-scrollable-element > .scrollbar > .slider:hover {
+  background: rgba(255, 255, 255, 0.2) !important;
+}
+.monaco-scrollable-element > .scrollbar > .slider.active {
+  background: rgba(255, 255, 255, 0.25) !important;
+}
+.monaco-scrollable-element > .visible {
+  opacity: 1;
+  background: transparent;
+  z-index: 11;
+}
+.monaco-scrollable-element > .invisible {
+  opacity: 0;
+  pointer-events: none;
+}
+.monaco-scrollable-element > .invisible.fade {
+  transition: opacity 800ms linear;
+}
+.monaco-scrollable-element > .shadow {
+  display: none;
+}
+.monaco-scrollable-element > .shadow.top {
+  display: block;
+  top: 0;
+  left: 3px;
+  height: 3px;
+  width: 100%;
+}
+
+.scroll-to-bottom-btn {
+  position: absolute;
+  bottom: 16px;
+  right: 20px;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--border-muted);
+  border-radius: 6px;
+  background: var(--bg-surface);
+  color: var(--text-muted);
+  cursor: default;
+  z-index: 100;
+  transition: color 0.12s, background 0.12s, border-color 0.12s, opacity 0.15s;
+  opacity: 0.8;
+}
+.scroll-to-bottom-btn:hover {
+  color: var(--text-secondary);
+  background: var(--bg-hover);
+  border-color: var(--border-highlight);
+  opacity: 1;
+}
+
+/* react-mosaic overrides — transparent chrome for frosted-glass aesthetic */
+
+.mosaic {
+  background: transparent !important;
+  position: relative !important;
+}
+
+.mosaic-root {
+  background: transparent !important;
+  top: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  left: 0 !important;
+}
+
+.mosaic-tile {
+  background: transparent !important;
+  margin: 0 !important;
+}
+
+.mosaic-window {
+  box-shadow: none !important;
+  border-radius: 0 !important;
+  border: none !important;
+  background: transparent !important;
+}
+
+.mosaic-window-toolbar {
+  height: 0 !important;
+  min-height: 0 !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  overflow: hidden !important;
+  border: none !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+.mosaic-window-body {
+  background: transparent !important;
+  top: 0 !important;
+  bottom: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+}
+
+.mosaic-window-body-overlay {
+  background: transparent !important;
+  display: none !important;
+}
+
+.mosaic-window-additional-actions-bar {
+  display: none !important;
+}
+
+/* Hide the drag preview element that sits behind each window's content */
+.mosaic-window .mosaic-preview {
+  display: none !important;
+}
+
+/* Resize handles — match old Divider: 6px hit area, 1.5px visible line */
+
+.mosaic-split {
+  background: transparent !important;
+  position: relative;
+  z-index: 1;
+}
+
+.mosaic-split:hover {
+  background: transparent !important;
+}
+
+.mosaic-split.-row {
+  margin-left: -3px !important;
+  width: 6px !important;
+  cursor: col-resize !important;
+}
+
+.mosaic-split.-column {
+  margin-top: -3px !important;
+  height: 6px !important;
+  cursor: row-resize !important;
+}
+
+.mosaic-split::after {
+  content: '';
+  position: absolute;
+  border-radius: 1px;
+  background: var(--bg-divider);
+  transition: background 0.12s ease;
+}
+
+.mosaic-split.-row::after {
+  width: 1.5px;
+  height: 100%;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.mosaic-split.-column::after {
+  height: 1.5px;
+  width: 100%;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.mosaic-split:hover::after {
+  background: var(--bg-divider-active);
+}
+
+/* Drop zone indicators — only visible during active drag-hover */
+
+.drop-target-container .drop-target {
+  background: var(--accent-bg) !important;
+  border: 1.5px solid var(--accent-border) !important;
+  border-radius: 8px;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+.drop-target-container .drop-target.drop-target-hover {
+  opacity: 1;
+}

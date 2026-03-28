@@ -1,0 +1,20 @@
+{
+  "name": "vapor-screenshots",
+  "version": "1.0.0",
+  "description": "Automated screenshot generation for Vapor terminal",
+  "private": true,
+  "scripts": {
+    "generate": "ts-node generate.ts",
+    "test": "ts-node test-launch.ts"
+  },
+  "dependencies": {
+    "@playwright/test": "^1.45.0",
+    "playwright": "^1.45.0",
+    "sharp": "^0.33.4"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.10",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.5.3"
+  }
+}

@@ -1,0 +1,144 @@
+name: Build, Test & Release
+
+on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - 'marketing/**'
+      - 'docs/**'
+      - '*.md'
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 25
+          cache: npm
+
+      - run: npm ci
+
+      - run: npm test
+
+  build:
+    needs: test
+    strategy:
+      matrix:
+        include:
+          - arch: arm64
+            os: macos-26
+          - arch: x64
+            os: macos-26-intel
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 25
+          cache: npm
+
+      - run: npm ci
+
+      - name: Import code signing certificate
+        env:
+          APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
+          APPLE_CERT_PASSWORD: ${{ secrets.APPLE_CERT_PASSWORD }}
+        run: |
+          # Create temporary keychain
+          KEYCHAIN_PATH=$RUNNER_TEMP/app-signing.keychain-db
+          KEYCHAIN_PASSWORD=$(openssl rand -base64 32)
+
+          security create-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+          security set-keychain-settings -lut 21600 "$KEYCHAIN_PATH"
+          security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+
+          # Import certificate
+          echo "$APPLE_CERTIFICATE" | base64 --decode > certificate.p12
+          security import certificate.p12 -k "$KEYCHAIN_PATH" -P "$APPLE_CERT_PASSWORD" -T /usr/bin/codesign
+          security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+
+          # Add to search list
+          security list-keychain -d user -s "$KEYCHAIN_PATH" $(security list-keychains -d user | sed s/\"//g)
+
+          # Verify
+          security find-identity -v -p codesigning
+
+          rm certificate.p12
+
+      - name: Build ${{ matrix.arch }} distributables
+        timeout-minutes: 45
+        run: |
+          echo "::group::Building and packaging application"
+          echo "Starting Electron Forge build (this includes code signing and notarization)"
+          echo "⚠️  Notarization can take 10-20 minutes - Apple servers are validating the app"
+          echo "⏱️  Timeout set to 45 minutes - build will fail if notarization hangs"
+          echo "::endgroup::"
+
+          npm run make:${{ matrix.arch }}
+        env:
+          NODE_ENV: production
+          APPLE_IDENTITY: "Developer ID Application: Peter Sauer (LLBRGF38UH)"
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_ID_PASSWORD: ${{ secrets.APPLE_APP_PASSWORD }}
+          APPLE_TEAM_ID: "LLBRGF38UH"
+          DEBUG: "electron-notarize*,electron-osx-sign*"
+
+      - name: Verify notarization
+        run: |
+          DMG_PATH=$(find out/make -name "*.dmg" | head -1)
+          APP_PATH=$(find out -path "*darwin-${{ matrix.arch }}/Vapor.app" | head -1)
+          echo "Verifying app: $APP_PATH"
+          echo "Verifying dmg: $DMG_PATH"
+
+          # The app bundle is what gets signed/notarized by electron-builder.
+          codesign --verify --deep --strict --verbose=2 "$APP_PATH"
+          xcrun stapler validate "$APP_PATH" || echo "Note: App stapling validation may fail in CI"
+          spctl -a -vv "$APP_PATH" || echo "Note: Gatekeeper check may fail until notarization propagation completes"
+
+          # DMGs are not always code-signed; do not fail CI on that check.
+          codesign -dv --verbose=4 "$DMG_PATH" || echo "Note: DMG is not code-signed (expected in this pipeline)"
+          xcrun stapler validate "$DMG_PATH" || echo "Note: DMG stapling validation may fail in CI"
+          spctl -a -vv -t install "$DMG_PATH" || echo "Note: DMG Gatekeeper check may fail until notarization propagation completes"
+
+      - name: Rename artifacts to stable names
+        run: |
+          mkdir -p staging
+          cp out/make/*.dmg "staging/Vapor-${{ matrix.arch }}.dmg"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dmg-${{ matrix.arch }}
+          path: staging/Vapor-${{ matrix.arch }}.dmg
+          retention-days: 30
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Create or update latest release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release delete latest --yes --cleanup-tag 2>/dev/null || true
+          gh release create latest \
+            artifacts/dmg-arm64/Vapor-arm64.dmg \
+            artifacts/dmg-x64/Vapor-x64.dmg \
+            --title "Latest Build" \
+            --notes "Automated build from \`main\` branch ($(date -u +%Y-%m-%d)). Pick the right DMG for your Mac:
+
+          - **Vapor-arm64.dmg** -- Apple Silicon (M1/M2/M3/M4)
+          - **Vapor-x64.dmg** -- Intel" \
+            --latest

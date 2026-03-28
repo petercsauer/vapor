@@ -1,0 +1,53 @@
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+
+# Diagnostic reports (Node.js)
+report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
+
+# OS
+.DS_Store
+
+# Environment
+.env
+.env.test
+
+# Dependencies
+node_modules/
+
+# TypeScript
+*.tsbuildinfo
+
+# Test coverage
+coverage/
+*.lcov
+.nyc_output
+
+# Caches
+.npm
+.eslintcache
+.cache/
+
+# Native addon build output (node-pty / electron-rebuild)
+build/Release
+
+# Package artifacts
+*.tgz
+.yarn-integrity
+
+# Electron Forge
+out/
+
+# Webpack (Electron Forge plugin)
+.webpack/
+
+# Vitest (uses Vite cache)
+.vite/
+
+# IDE / local tooling
+.cursor/
+.claude/

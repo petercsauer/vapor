@@ -1,0 +1,38 @@
+{
+  "font": {
+    "family": "SF Mono",
+    "size": 11,
+    "ligatures": true
+  },
+  "shell": {
+    "path": "/bin/zsh",
+    "args": ["-l"]
+  },
+  "theme": {
+    "background": "rgba(30, 30, 35, 0.95)",
+    "foreground": "#FFFFFF",
+    "cursor": "#0095FF",
+    "selectionBackground": "rgba(0, 149, 255, 0.3)",
+    "black": "#2E3440",
+    "red": "#FF6B6B",
+    "green": "#51CF66",
+    "yellow": "#FFD93D",
+    "blue": "#74C0FC",
+    "magenta": "#CC5DE8",
+    "cyan": "#5AC8FA",
+    "white": "#F8F9FA",
+    "brightBlack": "#868E96",
+    "brightRed": "#FF8787",
+    "brightGreen": "#8CE99A",
+    "brightYellow": "#FFE066",
+    "brightBlue": "#91D5FF",
+    "brightMagenta": "#E599F7",
+    "brightCyan": "#87E8DE",
+    "brightWhite": "#FFFFFF"
+  },
+  "vibrancy": "under-window",
+  "window": {
+    "width": 1200,
+    "height": 800
+  }
+}

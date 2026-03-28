@@ -1,0 +1,87 @@
+#!/bin/bash
+# vpr - Open files in Vapor's Monaco editor
+#
+# Usage:
+#   vpr <file>            Open file in a split to the right
+#   vpr -b <file>         Open file in a split below
+#   vpr --below <file>    Same as -b
+
+set -euo pipefail
+
+SOCKET="$HOME/.vapor/cli.sock"
+DIRECTION="right"
+FILE=""
+
+usage() {
+  echo "Usage: vpr [-b|--below] <file>"
+  echo ""
+  echo "Open a file in Vapor's editor."
+  echo ""
+  echo "Options:"
+  echo "  -b, --below    Split below instead of to the right"
+  echo "  -h, --help     Show this help message"
+  exit "${1:-0}"
+}
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    -b|--below)
+      DIRECTION="below"
+      shift
+      ;;
+    -h|--help)
+      usage 0
+      ;;
+    -*)
+      echo "Unknown option: $1" >&2
+      usage 1
+      ;;
+    *)
+      FILE="$1"
+      shift
+      ;;
+  esac
+done
+
+if [[ -z "$FILE" ]]; then
+  echo "Error: No file specified" >&2
+  usage 1
+fi
+
+# Resolve to absolute path
+if [[ "$FILE" = /* ]]; then
+  ABS_FILE="$FILE"
+else
+  ABS_FILE="$(cd "$(dirname "$FILE")" 2>/dev/null && pwd)/$(basename "$FILE")"
+fi
+
+if [[ ! -f "$ABS_FILE" ]]; then
+  echo "Error: File not found: $ABS_FILE" >&2
+  exit 1
+fi
+
+send_open() {
+  printf '{"action":"open","filePath":"%s","direction":"%s"}\n' "$ABS_FILE" "$DIRECTION" | nc -U "$SOCKET"
+}
+
+if [[ -S "$SOCKET" ]]; then
+  send_open
+else
+  # Vapor isn't running — launch it and wait for the socket
+  open -a Vapor 2>/dev/null || open "$(mdfind 'kMDItemCFBundleIdentifier == "com.electron.vapor"' | head -1)" 2>/dev/null || {
+    echo "Error: Could not launch Vapor" >&2
+    exit 1
+  }
+
+  for _ in $(seq 1 50); do
+    if [[ -S "$SOCKET" ]]; then
+      sleep 0.3
+      send_open
+      exit 0
+    fi
+    sleep 0.2
+  done
+
+  echo "Error: Timed out waiting for Vapor" >&2
+  exit 1
+fi
