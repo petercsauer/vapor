@@ -241,4 +241,7 @@ const api: VaporAPI = {
   },
 };
 
-contextBridge.exposeInMainWorld('vapor', api);
+// contextBridge requires contextIsolation: true, which currently breaks
+// the app at runtime (sandbox/serialization issues with xterm.js and Monaco).
+// Using direct window assignment until those are resolved.
+(window as any).vapor = api;

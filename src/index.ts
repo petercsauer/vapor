@@ -79,8 +79,8 @@ export const createWindow = (): void => {
     webPreferences: {
       preload: MAIN_WINDOW_PRELOAD_WEBPACK_ENTRY,
       nodeIntegration: false,
-      contextIsolation: true,
-      sandbox: true,
+      contextIsolation: false,
+      sandbox: false,
     },
   });
 
