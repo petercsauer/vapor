@@ -533,7 +533,7 @@ describe("createTabWithHost", () => {
     expect(pinnedHosts[tabs[0].id]).toEqual(hostInfo);
     expect(sshHosts[tabs[0].id]).toBe("myserver.com");
     expect(containerNames[tabs[0].id]).toBeUndefined();
-    expect(mock.pty.create).toHaveBeenCalledWith({ command: "ssh myserver.com" });
+    expect(mock.pty.create).toHaveBeenCalledWith({ command: "ssh 'myserver.com'" });
   });
 
   it("creates Docker tab with correct pinnedHost, command, and containerNames", async () => {
@@ -547,7 +547,7 @@ describe("createTabWithHost", () => {
     expect(containerNames[tabs[0].id]).toBe("my-container");
     expect(sshHosts[tabs[0].id]).toBeUndefined();
     expect(mock.pty.create).toHaveBeenCalledWith({
-      command: "docker exec -it my-container /bin/sh",
+      command: "docker exec -it 'my-container' /bin/sh",
     });
   });
 
@@ -570,7 +570,7 @@ describe("splitPane with pinned host", () => {
 
     expect(mock.pty.create).toHaveBeenCalledTimes(2);
     expect(mock.pty.create).toHaveBeenLastCalledWith({
-      command: "ssh myserver.com",
+      command: "ssh 'myserver.com'",
     });
   });
 
@@ -582,7 +582,7 @@ describe("splitPane with pinned host", () => {
 
     expect(mock.pty.create).toHaveBeenCalledTimes(2);
     expect(mock.pty.create).toHaveBeenLastCalledWith({
-      command: "docker exec -it my-container /bin/sh",
+      command: "docker exec -it 'my-container' /bin/sh",
     });
   });
 
@@ -594,6 +594,29 @@ describe("splitPane with pinned host", () => {
 
     expect(mock.pty.create).toHaveBeenCalledTimes(2);
     expect(mock.pty.create).toHaveBeenLastCalledWith(undefined);
+  });
+});
+
+describe("shell escaping in host commands", () => {
+  it("escapes shell metacharacters in SSH host names", async () => {
+    await getState().createTabWithHost({ type: "ssh", host: "evil;rm -rf /" });
+    expect(mock.pty.create).toHaveBeenCalledWith({
+      command: "ssh 'evil;rm -rf /'",
+    });
+  });
+
+  it("escapes single quotes in host names", async () => {
+    await getState().createTabWithHost({ type: "ssh", host: "host'name" });
+    expect(mock.pty.create).toHaveBeenCalledWith({
+      command: "ssh 'host'\\''name'",
+    });
+  });
+
+  it("escapes shell metacharacters in Docker container names", async () => {
+    await getState().createTabWithHost({ type: "docker", host: "evil;rm -rf /" });
+    expect(mock.pty.create).toHaveBeenCalledWith({
+      command: "docker exec -it 'evil;rm -rf /' /bin/sh",
+    });
   });
 });
 

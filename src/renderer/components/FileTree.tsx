@@ -159,19 +159,13 @@ const TreeNode = React.memo(function TreeNode({
   const [newItem, setNewItem] = useState<"file" | "folder" | null>(null);
 
   useEffect(() => {
-    if (isDir && isExpanded && !loaded) {
+    if (isDir && isExpanded) {
       loadDir(entry.path).then((entries) => {
         setChildren(entries);
         setLoaded(true);
       });
     }
-  }, [isDir, isExpanded, loaded, entry.path, loadDir]);
-
-  useEffect(() => {
-    if (isDir && isExpanded && loaded) {
-      loadDir(entry.path).then(setChildren);
-    }
-  }, [isExpanded]);
+  }, [isDir, isExpanded, entry.path, loadDir]);
 
   const handleClick = useCallback(() => {
     if (renaming) return;
@@ -187,7 +181,9 @@ const TreeNode = React.memo(function TreeNode({
 
   const handleRenameCommit = useCallback(
     async (newName: string) => {
-      const dir = entry.path.substring(0, entry.path.lastIndexOf("/"));
+      const lastSlash = entry.path.lastIndexOf("/");
+      if (lastSlash < 0) return;
+      const dir = entry.path.substring(0, lastSlash) || "/";
       const newPath = dir + "/" + newName;
       try {
         if (currentRemoteHost) {

@@ -249,4 +249,4 @@ MIT License
 
 ## Author
 
-Peter Sauer (peter.sauer@applied.co)
+Peter Sauer (petercsauer@me.com)

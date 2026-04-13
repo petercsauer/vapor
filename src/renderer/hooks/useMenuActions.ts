@@ -23,7 +23,7 @@ export function useMenuActions() {
 
       if (action.startsWith("menu:tab-")) {
         const idx = parseInt(action.split("-")[1], 10) - 1;
-        if (idx < state.tabs.length) {
+        if (idx >= 0 && idx < state.tabs.length) {
           state.activateTab(state.tabs[idx].id);
         }
         return;

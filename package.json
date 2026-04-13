@@ -1,7 +1,7 @@
 {
   "name": "vapor",
   "productName": "Vapor",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "A frosted-glass terminal emulator",
   "main": ".webpack/main",
   "private": true,
@@ -14,13 +14,15 @@
     "publish": "electron-forge publish",
     "lint": "eslint --ext .ts,.tsx .",
     "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
     "test:watch": "vitest",
-    "postinstall": "electron-rebuild -f -o node-pty"
+    "postinstall": "electron-rebuild -f -o node-pty",
+    "version:bump": "npm version patch --no-git-tag-version"
   },
   "keywords": [],
   "author": {
     "name": "Peter Sauer",
-    "email": "peter.sauer@applied.co"
+    "email": "petercsauer@me.com"
   },
   "license": "MIT",
   "repository": {
@@ -37,14 +39,17 @@
     "@electron-forge/publisher-github": "^7.11.1",
     "@electron/fuses": "^1.8.0",
     "@electron/rebuild": "^4.0.3",
+    "@testing-library/dom": "^10.4.1",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",
+    "@types/node": "^16.11.7",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
     "@types/ssh2": "^1.15.5",
     "@typescript-eslint/eslint-plugin": "^5.62.0",
     "@typescript-eslint/parser": "^5.62.0",
     "@vercel/webpack-asset-relocator-loader": "^1.7.3",
+    "@vitest/coverage-v8": "^4.1.2",
     "css-loader": "^6.11.0",
     "electron": "^41.1.0",
     "eslint": "^8.57.1",
@@ -65,6 +70,7 @@
     "@xterm/addon-web-links": "^0.11.0",
     "@xterm/addon-webgl": "^0.18.0",
     "@xterm/xterm": "^5.5.0",
+    "electron-log": "^5.4.3",
     "lucide-react": "^1.7.0",
     "monaco-editor": "^0.55.1",
     "node-pty": "^1.1.0",

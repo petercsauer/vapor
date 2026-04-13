@@ -25,7 +25,7 @@ export function createVaporMock(): VaporAPI {
       }),
       getContext: vi.fn().mockResolvedValue(null),
       getState: vi.fn().mockResolvedValue(null),
-      onStateUpdated: vi.fn().mockReturnValue(() => {}),
+      onStateUpdated: vi.fn().mockReturnValue(() => undefined),
     },
     tabNamer: {
       available: vi.fn().mockResolvedValue(false),

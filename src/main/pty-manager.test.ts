@@ -9,6 +9,9 @@ vi.mock("electron", () => ({
   ipcMain: { handle: vi.fn(), on: vi.fn() },
   BrowserWindow: { fromWebContents: vi.fn(), getAllWindows: vi.fn(() => []) },
 }));
+vi.mock("electron-log/main", () => ({
+  default: { error: vi.fn(), warn: vi.fn(), info: vi.fn(), debug: vi.fn(), initialize: vi.fn(), transports: { file: {} } },
+}));
 vi.mock("./config", () => ({ getConfig: vi.fn(() => ({ shell: { path: "", args: [] } })) }));
 
 import * as pty from "node-pty";

@@ -22,6 +22,10 @@ jobs:
 
       - run: npm ci
 
+      - run: npm run lint
+
+      - run: npx tsc --noEmit
+
       - run: npm test
 
   build:
@@ -109,11 +113,12 @@ jobs:
         run: |
           mkdir -p staging
           cp out/make/*.dmg "staging/Vapor-${{ matrix.arch }}.dmg"
+          cp out/make/zip/darwin/${{ matrix.arch }}/*.zip "staging/Vapor-${{ matrix.arch }}.zip"
 
       - uses: actions/upload-artifact@v4
         with:
-          name: dmg-${{ matrix.arch }}
-          path: staging/Vapor-${{ matrix.arch }}.dmg
+          name: build-${{ matrix.arch }}
+          path: staging/
           retention-days: 30
 
   release:
@@ -128,14 +133,30 @@ jobs:
         with:
           path: artifacts
 
-      - name: Create or update latest release
+      - name: Create versioned and latest releases
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          VERSION=$(node -p "require('./package.json').version")
+
+          # Create versioned release if it doesn't already exist
+          if ! gh release view "v$VERSION" &>/dev/null; then
+            gh release create "v$VERSION" \
+              artifacts/build-arm64/Vapor-arm64.dmg \
+              artifacts/build-arm64/Vapor-arm64.zip \
+              artifacts/build-x64/Vapor-x64.dmg \
+              artifacts/build-x64/Vapor-x64.zip \
+              --title "v$VERSION" \
+              --generate-notes
+          fi
+
+          # Update the latest release alias
           gh release delete latest --yes --cleanup-tag 2>/dev/null || true
           gh release create latest \
-            artifacts/dmg-arm64/Vapor-arm64.dmg \
-            artifacts/dmg-x64/Vapor-x64.dmg \
+            artifacts/build-arm64/Vapor-arm64.dmg \
+            artifacts/build-arm64/Vapor-arm64.zip \
+            artifacts/build-x64/Vapor-x64.dmg \
+            artifacts/build-x64/Vapor-x64.zip \
             --title "Latest Build" \
             --notes "Automated build from \`main\` branch ($(date -u +%Y-%m-%d)). Pick the right DMG for your Mac:
 

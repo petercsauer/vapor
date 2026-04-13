@@ -20,6 +20,10 @@ import {
   swapLeaves,
 } from "./panes";
 
+function shellEscape(s: string): string {
+  return "'" + s.replace(/'/g, "'\\''") + "'";
+}
+
 export interface Tab {
   id: string;
   title: string;
@@ -158,8 +162,8 @@ export const useTabPaneStore = create<TabPaneStore>((set, get) => ({
     try {
       const command =
         hostInfo.type === "ssh"
-          ? `ssh ${hostInfo.host}`
-          : `docker exec -it ${hostInfo.host} /bin/sh`;
+          ? `ssh ${shellEscape(hostInfo.host)}`
+          : `docker exec -it ${shellEscape(hostInfo.host)} /bin/sh`;
       const { sessionId } = await vapor.pty.create({ command });
       const paneId = genPaneId();
       const tabId = `tab-${++nextTabId}`;
@@ -280,8 +284,8 @@ export const useTabPaneStore = create<TabPaneStore>((set, get) => ({
         ? {
             command:
               pinned.type === "ssh"
-                ? `ssh ${pinned.host}`
-                : `docker exec -it ${pinned.host} /bin/sh`,
+                ? `ssh ${shellEscape(pinned.host)}`
+                : `docker exec -it ${shellEscape(pinned.host)} /bin/sh`,
           }
         : undefined;
       const { sessionId } = await vapor.pty.create(createOpts);

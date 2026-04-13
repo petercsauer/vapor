@@ -1,9 +1,45 @@
-import { app, Menu, BrowserWindow, MenuItemConstructorOptions, dialog } from "electron";
+import { app, autoUpdater, Menu, BrowserWindow, MenuItemConstructorOptions, dialog } from "electron";
 import { openConfigInEditor, getConfig, updateConfig, broadcastConfig } from "./config";
 import { execSync } from "child_process";
 import * as path from "path";
 import * as fs from "fs";
 import { createWindow } from "../index";
+
+let isManualCheck = false;
+
+autoUpdater.on("update-available", () => {
+  if (isManualCheck) {
+    dialog.showMessageBox({
+      type: "info",
+      title: "Update Available",
+      message: "A new version is available and will be downloaded.",
+    });
+    isManualCheck = false;
+  }
+});
+
+autoUpdater.on("update-not-available", () => {
+  if (isManualCheck) {
+    dialog.showMessageBox({
+      type: "info",
+      title: "No Updates",
+      message: "You are running the latest version of Vapor.",
+    });
+    isManualCheck = false;
+  }
+});
+
+autoUpdater.on("error", (err) => {
+  if (isManualCheck) {
+    dialog.showMessageBox({
+      type: "warning",
+      title: "Update Error",
+      message: "Could not check for updates.",
+      detail: err?.message || String(err),
+    });
+    isManualCheck = false;
+  }
+});
 
 function sendToRenderer(action: string): void {
   const win = BrowserWindow.getFocusedWindow();
@@ -56,6 +92,12 @@ function installCli(): void {
 }
 
 export function setupMenu(): void {
+  app.setAboutPanelOptions({
+    applicationName: "Vapor",
+    applicationVersion: app.getVersion(),
+    copyright: "Copyright 2026 Peter Sauer. MIT License.",
+  });
+
   const template: MenuItemConstructorOptions[] = [
     {
       label: app.name,
@@ -66,6 +108,13 @@ export function setupMenu(): void {
           label: "Settings...",
           accelerator: "Cmd+,",
           click: () => openConfigInEditor(),
+        },
+        {
+          label: "Check for Updates...",
+          click: () => {
+            isManualCheck = true;
+            autoUpdater.checkForUpdates();
+          },
         },
         { type: "separator" },
         { role: "hide" },

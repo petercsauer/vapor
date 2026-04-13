@@ -115,7 +115,7 @@ describe('TerminalPane Scroll Guard', () => {
   let terminalInstance: any;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let onWriteParsedCallback: ((...args: any[]) => void) | null = null;
-  let writeCallback: ((data: string) => void) | null = null;
+  const writeCallback: ((data: string) => void) | null = null;
   let pendingRafCallbacks: ((time: number) => void)[] = [];
 
   function flushRaf() {

@@ -1,5 +1,6 @@
-import { app, BrowserWindow, nativeImage, ipcMain, shell } from "electron";
+import { app, BrowserWindow, Menu, nativeImage, ipcMain, shell } from "electron";
 import { updateElectronApp } from "update-electron-app";
+import log from "electron-log/main";
 import * as path from "path";
 import { setupPtyHandlers, killAllSessions } from "./main/pty-manager";
 import { setupMenu } from "./main/menu";
@@ -12,18 +13,64 @@ import { startCliServer, stopCliServer, handleOpenFileArgs } from "./main/cli-se
 import { setupSSHHandlers } from "./main/ssh-handler";
 import { setupHostHandlers } from "./main/host-manager";
 import { closeConnectionPool } from "./main/ssh-connection-pool";
+import { loadWindowState, saveWindowState, flushWindowState } from "./main/window-state";
 
 declare const MAIN_WINDOW_WEBPACK_ENTRY: string;
 declare const MAIN_WINDOW_PRELOAD_WEBPACK_ENTRY: string;
 
 app.setName("Vapor");
 
+log.initialize({ preload: true });
+log.transports.file.level = "info";
+log.transports.file.maxSize = 5 * 1024 * 1024;
+
+process.on("uncaughtException", (err) => {
+  log.error("Uncaught exception:", err);
+});
+process.on("unhandledRejection", (reason) => {
+  log.error("Unhandled rejection:", reason);
+});
+
+const gotTheLock = app.requestSingleInstanceLock();
+if (!gotTheLock) {
+  app.quit();
+}
+
+app.on("second-instance", (_event, argv) => {
+  const win = BrowserWindow.getAllWindows()[0];
+  if (win) {
+    if (win.isMinimized()) win.restore();
+    win.focus();
+    handleOpenFileArgs(argv);
+  }
+});
+
+let isFirstWindow = true;
+
 export const createWindow = (): void => {
   const config = getConfig();
 
-  const mainWindow = new BrowserWindow({
+  const windowOpts: Electron.BrowserWindowConstructorOptions = {
     width: config.window.width,
     height: config.window.height,
+  };
+
+  let shouldMaximize = false;
+
+  if (isFirstWindow) {
+    const savedState = loadWindowState();
+    windowOpts.width = savedState.width;
+    windowOpts.height = savedState.height;
+    if (savedState.x !== undefined && savedState.y !== undefined) {
+      windowOpts.x = savedState.x;
+      windowOpts.y = savedState.y;
+    }
+    shouldMaximize = savedState.isMaximized;
+    isFirstWindow = false;
+  }
+
+  const mainWindow = new BrowserWindow({
+    ...windowOpts,
     transparent: true,
     visualEffectState: "active",
     titleBarStyle: "hiddenInset",
@@ -37,6 +84,10 @@ export const createWindow = (): void => {
     },
   });
 
+  if (shouldMaximize) {
+    mainWindow.maximize();
+  }
+
   if (config.background?.transparent !== false) {
     const vibrancyType = (config.vibrancy || "under-window") as
       | "under-window"
@@ -48,6 +99,26 @@ export const createWindow = (): void => {
 
   mainWindow.loadURL(MAIN_WINDOW_WEBPACK_ENTRY);
 
+  mainWindow.on("resize", () => saveWindowState(mainWindow));
+  mainWindow.on("move", () => saveWindowState(mainWindow));
+  mainWindow.on("close", () => saveWindowState(mainWindow));
+
+  mainWindow.webContents.on("render-process-gone", (_event, details) => {
+    log.error("Render process gone:", details.reason, "exitCode:", details.exitCode);
+  });
+
+  mainWindow.on("unresponsive", () => {
+    log.warn("Window became unresponsive");
+  });
+
+  mainWindow.webContents.on("will-navigate", (event) => {
+    event.preventDefault();
+  });
+
+  mainWindow.webContents.setWindowOpenHandler(() => {
+    return { action: "deny" };
+  });
+
   mainWindow.on("swipe" as const, (_event: Electron.Event, direction: string) => {
     if (direction === "left" || direction === "right") {
       mainWindow.webContents.send("swipe-tab", direction);
@@ -56,7 +127,10 @@ export const createWindow = (): void => {
 };
 
 app.on("ready", () => {
-  updateElectronApp();
+  updateElectronApp({
+    updateInterval: "1 hour",
+    notifyUser: true,
+  });
 
   const iconDirs = [
     path.join(app.getAppPath(), "assets"),
@@ -77,7 +151,7 @@ app.on("ready", () => {
 
   // Setup dock menu (macOS)
   if (app.dock) {
-    const dockMenu = require("electron").Menu.buildFromTemplate([
+    const dockMenu = Menu.buildFromTemplate([
       {
         label: "New Window",
         click: () => createWindow(),
@@ -121,6 +195,10 @@ app.on("activate", () => {
 });
 
 app.on("before-quit", () => {
+  const win = BrowserWindow.getAllWindows()[0];
+  if (win) {
+    flushWindowState(win);
+  }
   killAllSessions();
   closeConnectionPool();
   closeWatcher();

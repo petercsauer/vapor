@@ -97,4 +97,57 @@ describe("useTabNaming", () => {
     // Tab namer should be checked
     expect(vaporModule.vapor.tabNamer.available).toHaveBeenCalled();
   });
+
+  it("does not start interval after unmount", async () => {
+    vi.useFakeTimers();
+    const vaporModule = await import("../api/vapor");
+
+    let resolveAvailable!: (ok: boolean) => void;
+    vi.mocked(vaporModule.vapor.tabNamer.available).mockReturnValue(
+      new Promise((r) => { resolveAvailable = r; })
+    );
+
+    const setIntervalSpy = vi.spyOn(globalThis, "setInterval");
+
+    const { unmount } = renderHook(() => useTabNaming());
+
+    unmount();
+
+    resolveAvailable(true);
+    await vi.advanceTimersByTimeAsync(0);
+
+    const postUnmountCalls = setIntervalSpy.mock.calls.filter(
+      ([fn]) => typeof fn === "function"
+    );
+    expect(postUnmountCalls).toHaveLength(0);
+
+    setIntervalSpy.mockRestore();
+    vi.useRealTimers();
+  });
+
+  it("catches errors in updateTabNames without unhandled rejection", async () => {
+    vi.useFakeTimers();
+    const vaporModule = await import("../api/vapor");
+
+    vi.mocked(vaporModule.vapor.tabNamer.available).mockResolvedValue(true);
+    vi.mocked(vaporModule.vapor.pty.getContext).mockRejectedValue(
+      new Error("context fetch failed")
+    );
+
+    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+
+    renderHook(() => useTabNaming());
+
+    await vi.advanceTimersByTimeAsync(0);
+    await vi.advanceTimersByTimeAsync(5000);
+    await vi.advanceTimersByTimeAsync(0);
+
+    expect(warnSpy).toHaveBeenCalledWith(
+      "[TabNaming] update failed:",
+      expect.any(Error)
+    );
+
+    warnSpy.mockRestore();
+    vi.useRealTimers();
+  });
 });

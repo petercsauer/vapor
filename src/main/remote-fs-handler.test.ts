@@ -414,21 +414,59 @@ describe("fs:remote:mkdir", () => {
 
 describe("timeout handling", () => {
   it("times out long operations", async () => {
-    const mockSFTP = createMockSFTP();
-    mockGetConnection.mockResolvedValue(mockSFTP);
+    vi.useFakeTimers();
+    try {
+      const mockSFTP = createMockSFTP();
+      mockGetConnection.mockResolvedValue(mockSFTP);
 
-    // Mock operation that never completes
-    (mockSFTP.readFile as any).mockImplementation(() => {
-      // Never call callback
-    });
+      let savedCallback: Function | undefined;
+      (mockSFTP.readFile as any).mockImplementation(
+        (_path: string, _encoding: string, cb: Function) => {
+          savedCallback = cb;
+        },
+      );
 
-    const handler = handlers.get("fs:remote:read-file")!;
+      const handler = handlers.get("fs:remote:read-file")!;
+      const resultPromise = handler({}, "test-host", "/remote/file.txt");
 
-    // This should timeout, but we don't want to wait 30s in tests
-    // So we'll just verify the structure is in place by checking
-    // that the handler is properly defined
-    expect(handler).toBeDefined();
-  }, 100);
+      // Prevent the rejection from being flagged as unhandled while advancing timers
+      resultPromise.catch(() => {});
+
+      await vi.advanceTimersByTimeAsync(30000);
+
+      await expect(resultPromise).rejects.toThrow(/timed out/);
+
+      // Settle the inner promise so it doesn't become an unhandled rejection
+      if (savedCallback) savedCallback(null, Buffer.from("late"));
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("withTimeout clears timer on success", async () => {
+    vi.useFakeTimers();
+    try {
+      const mockSFTP = createMockSFTP();
+      mockGetConnection.mockResolvedValue(mockSFTP);
+
+      (mockSFTP.readFile as any).mockImplementation(
+        (_path: string, _encoding: string, callback: Function) => {
+          callback(null, Buffer.from("data"));
+        },
+      );
+
+      const handler = handlers.get("fs:remote:read-file")!;
+      const result = await handler({}, "test-host", "/remote/file.txt");
+      expect(result).toBe("data");
+
+      // After the promise resolved, the timer should have been cleared.
+      // Verify no pending timeout rejects by advancing past the timeout window.
+      const activeTimerCount = vi.getTimerCount();
+      expect(activeTimerCount).toBe(0);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
 });
 
 describe("error mapping", () => {

@@ -241,6 +241,7 @@ const api: VaporAPI = {
   },
 };
 
-// With contextIsolation: false, contextBridge doesn't work
-// We need to assign directly to window
+// contextBridge requires contextIsolation: true, which currently breaks
+// the app at runtime (sandbox/serialization issues with xterm.js and Monaco).
+// Using direct window assignment until those are resolved.
 (window as any).vapor = api;

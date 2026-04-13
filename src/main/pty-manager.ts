@@ -1,5 +1,6 @@
 import * as pty from "node-pty";
 import { ipcMain, BrowserWindow } from "electron";
+import log from "electron-log/main";
 import * as os from "os";
 import * as path from "path";
 import * as fs from "fs";
@@ -12,7 +13,7 @@ import type { SessionState } from "../shared/types";
 
 function shellQuote(s: string): string {
   if (!s) return "''";
-  if (/^[a-zA-Z0-9_.\/\-]+$/.test(s)) return s;
+  if (/^[a-zA-Z0-9_./-]+$/.test(s)) return s;
   return "'" + s.replace(/'/g, "'\\''") + "'";
 }
 
@@ -531,7 +532,7 @@ export function setupPtyHandlers(): void {
             ptyProcess.write(`cd ${cdArg}\n`);
           }
         };
-        waitAndReplay().catch((err) => console.warn("Command replay failed:", err));
+        waitAndReplay().catch((err) => log.warn("Command replay failed:", err));
       }
 
     ptyProcess.onData((data: string) => {
@@ -604,33 +605,33 @@ export function setupPtyHandlers(): void {
   ipcMain.on("pty:input", (_event, { sessionId, data }: { sessionId: string; data: string }) => {
     const session = sessions.get(sessionId);
     if (!session) {
-      console.error(`[pty:input] Session not found: ${sessionId}`);
+      log.error(`[pty:input] Session not found: ${sessionId}`);
       return;
     }
     try {
       session.process.write(data);
     } catch (error) {
-      console.error(`[pty:input] Failed to write to session ${sessionId}:`, error);
+      log.error(`[pty:input] Failed to write to session ${sessionId}:`, error);
     }
   });
 
   ipcMain.on("pty:resize", (_event, { sessionId, cols, rows }: { sessionId: string; cols: number; rows: number }) => {
     const session = sessions.get(sessionId);
     if (!session) {
-      console.error(`[pty:resize] Session not found: ${sessionId}`);
+      log.error(`[pty:resize] Session not found: ${sessionId}`);
       return;
     }
     try {
       session.process.resize(cols, rows);
     } catch (error) {
-      console.error(`[pty:resize] Failed to resize session ${sessionId} to ${cols}x${rows}:`, error);
+      log.error(`[pty:resize] Failed to resize session ${sessionId} to ${cols}x${rows}:`, error);
     }
   });
 
   ipcMain.handle("pty:kill", (_event, { sessionId }: { sessionId: string }) => {
     const session = sessions.get(sessionId);
     if (!session) {
-      console.warn(`[pty:kill] Session not found: ${sessionId}`);
+      log.warn(`[pty:kill] Session not found: ${sessionId}`);
       return;
     }
     try {
@@ -638,7 +639,7 @@ export function setupPtyHandlers(): void {
       session.process.kill();
       sessions.delete(sessionId);
     } catch (error) {
-      console.error(`[pty:kill] Failed to kill session ${sessionId}:`, error);
+      log.error(`[pty:kill] Failed to kill session ${sessionId}:`, error);
       // Still try to clean up
       sessions.delete(sessionId);
     }
@@ -658,7 +659,7 @@ export function setupPtyHandlers(): void {
     async (_event, { sessionId }: { sessionId: string }) => {
       const session = sessions.get(sessionId);
       if (!session) {
-        console.warn(`[pty:get-info] Session not found: ${sessionId}`);
+        log.warn(`[pty:get-info] Session not found: ${sessionId}`);
         return null;
       }
       const pid = session.process.pid;
@@ -695,7 +696,7 @@ export function setupPtyHandlers(): void {
     async (_event, { sessionId }: { sessionId: string }) => {
       const session = sessions.get(sessionId);
       if (!session) {
-        console.warn(`[pty:get-context] Session not found: ${sessionId}`);
+        log.warn(`[pty:get-context] Session not found: ${sessionId}`);
         return null;
       }
       const pid = session.process.pid;

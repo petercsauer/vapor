@@ -6,6 +6,10 @@ import { EventEmitter } from "events";
 let mockClientInstances: any[] = [];
 let mockSftpInstances: any[] = [];
 
+vi.mock("electron-log/main", () => ({
+  default: { error: vi.fn(), warn: vi.fn(), info: vi.fn(), debug: vi.fn(), initialize: vi.fn(), transports: { file: {} } },
+}));
+
 // Mock ssh2 - must be hoisted before imports
 vi.mock("ssh2", async () => {
   const { EventEmitter } = await import("events");
@@ -273,6 +277,56 @@ Host testhost
         port: 22,
       })
     );
+  });
+
+  it("removeConnection calls client.end()", async () => {
+    const connectPromise = pool.getConnection("testhost");
+
+    await vi.waitFor(() => mockClientInstances.length > 0);
+    simulateConnection(0);
+
+    await connectPromise;
+
+    const client = mockClientInstances[0];
+    client.end.mockClear();
+
+    // Trigger removeConnection via the "end" event handler
+    client.emit("end");
+
+    expect(client.end).toHaveBeenCalled();
+    expect(pool.listConnections()).toHaveLength(0);
+  });
+
+  it("reconnect timers cancelled on closeAllConnections", async () => {
+    vi.useFakeTimers();
+    try {
+      const connectPromise = pool.getConnection("testhost");
+      await vi.advanceTimersByTimeAsync(0);
+      simulateConnection(0);
+
+      await connectPromise;
+
+      const client = mockClientInstances[0];
+
+      // Trigger a connection error to schedule a reconnect timer
+      client.sftp.mockImplementation((callback: any) => {
+        const mockSftp = { readdir: vi.fn() };
+        mockSftpInstances.push(mockSftp);
+        callback(null, mockSftp);
+      });
+
+      client.emit("error", new Error("Simulated disconnect"));
+
+      // A reconnect timer should now be pending
+      expect(vi.getTimerCount()).toBeGreaterThan(0);
+
+      // closeAllConnections should clear the reconnect timer
+      pool.closeAllConnections();
+
+      expect(vi.getTimerCount()).toBe(0);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });
 

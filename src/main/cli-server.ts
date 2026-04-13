@@ -2,6 +2,7 @@ import * as net from "net";
 import * as path from "path";
 import * as fs from "fs";
 import { app, BrowserWindow } from "electron";
+import log from "electron-log/main";
 
 const SOCKET_DIR = path.join(app.getPath("home"), ".vapor");
 const SOCKET_PATH = path.join(SOCKET_DIR, "cli.sock");
@@ -53,7 +54,7 @@ export function startCliServer(): void {
   });
 
   server.on("error", (err) => {
-    console.error("CLI server error:", err);
+    log.error("CLI server error:", err);
   });
 
   server.listen(SOCKET_PATH, () => {

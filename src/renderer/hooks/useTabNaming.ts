@@ -8,6 +8,7 @@ export function useTabNaming() {
     let namingInterval: ReturnType<typeof setInterval> | null = null;
     let namingDebounce: ReturnType<typeof setTimeout> | null = null;
     let namingRunning = false;
+    let cancelled = false;
 
     const gitRootCache = new Map<string, { result: string | null; ts: number }>();
     const GIT_CACHE_TTL = 10000;
@@ -60,6 +61,8 @@ export function useTabNaming() {
           const name = await vapor.tabNamer.suggest(ctx);
           if (name) setTabTitle(tab.id, name);
         }
+      } catch (err) {
+        console.warn("[TabNaming] update failed:", err);
       } finally {
         namingRunning = false;
       }
@@ -71,7 +74,7 @@ export function useTabNaming() {
     }
 
     vapor.tabNamer.available().then((ok) => {
-      if (!ok) return;
+      if (!ok || cancelled) return;
       namingInterval = setInterval(updateTabNames, 5000);
     });
 
@@ -83,6 +86,7 @@ export function useTabNaming() {
     });
 
     return () => {
+      cancelled = true;
       cleanupOutput();
       cleanupStateUpdated();
       if (namingInterval) clearInterval(namingInterval);
